@@ -142,6 +142,7 @@ public class ChargeItemController {
       	
     	if(dto.getRemark() != null && dto.getRemark().length()>100){
     		throw new RestException(CommonStatus.REMARK_LENGTH);
+
     	}
     }
 }
