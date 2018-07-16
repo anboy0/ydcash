@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.BaseUserMapper">
+    <resultMap id="BaseUserResultMap" type="com.demo.demo.sys.entity.BaseUser">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="phone" property="phone"/>
+        <result column="telephone" property="telephone"/>
+        <result column="address" property="address"/>
+        <result column="enabled" property="enabled"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="userface" property="userface"/>
+        <result column="remark" property="remark"/>
+        <result column="companyName" property="companyName"/>
+        <result column="companyCode" property="companyCode"/>
+        <result column="usercode" property="usercode"/>
+        <result column="statusValue" property="statusValue"/>
+    </resultMap>
+    <resultMap id="lazyLoadBaseRoles" type="com.demo.demo.sys.entity.BaseUser" extends="BaseUserResultMap">
+        <collection property="baseRoles" ofType="com.demo.demo.sys.entity.BaseRole" select="getBaseRolesByBaseUserId"
+                    column="id"></collection>
+        <collection property="baseMenus" ofType="com.demo.demo.sys.entity.BaseMenu" select="getBaseMenusByBaseUserId"
+                    column="id"></collection>
+    </resultMap>
+    <resultMap id="eagerLoadBaseRoles" type="com.demo.demo.sys.entity.BaseUser" extends="BaseUserResultMap">
+        <collection property="baseRoles" ofType="com.demo.demo.sys.entity.BaseRole">
+            <id property="id" column="rid"/>
+            <result property="name" column="rname"/>
+            <result property="nameZh" column="rnameZh"/>
+        </collection>
+    </resultMap>
+    <resultMap id="BaseMenuResultMap" type="com.demo.demo.sys.entity.BaseMenu">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="component" property="component" javaType="java.lang.Object"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="iconCls" property="iconCls" jdbcType="VARCHAR"/>
+        <result column="keepAlive" property="keepAlive" jdbcType="BIT"/>
+        <result column="parentId" property="parentId" jdbcType="INTEGER"/>
+        <result column="requireAuth" property="requireAuth"/>
+        <result column="keepAlive" property="keepAlive"/>
+        <association property="meta" javaType="com.demo.demo.sys.entity.BaseMenuMeta">
+            <result column="keepAlive" property="keepAlive"/>
+            <result column="requireAuth" property="requireAuth"/>
+        </association>
+        <collection property="baseRoles" ofType="com.demo.demo.sys.entity.BaseRole">
+            <id column="rid" property="id"/>
+            <result column="rname" property="name"/>
+            <result column="rnamezh" property="nameZh"/>
+        </collection>
+        <collection property="children" ofType="com.demo.demo.sys.entity.BaseMenu">
+            <id column="id2" property="id"/>
+            <result column="path2" property="path" jdbcType="VARCHAR"/>
+            <result column="component2" property="component" jdbcType="VARCHAR"/>
+            <result column="name2" property="name" jdbcType="VARCHAR"/>
+            <result column="requireAuth2" property="requireAuth" jdbcType="VARCHAR"/>
+            <result column="path2" property="path" jdbcType="VARCHAR"/>
+            <result column="iconCls2" property="iconCls" jdbcType="VARCHAR"/>
+            <result column="keepAlive2" property="keepAlive"/>
+            <association property="meta" javaType="com.demo.demo.sys.entity.BaseMenuMeta">
+                <result column="keepAlive2" property="keepAlive"/>
+                <result column="requireAuth2" property="requireAuth"/>
+            </association>
+            <collection property="children" ofType="com.demo.demo.sys.entity.BaseMenu">
+                <id column="id3" property="id"/>
+                <result column="name3" property="name" jdbcType="VARCHAR"/>
+                <result column="requireAuth3" property="requireAuth" jdbcType="VARCHAR"/>
+                <result column="path3" property="path" jdbcType="VARCHAR"/>
+                <result column="iconCls3" property="iconCls" jdbcType="VARCHAR"/>
+                <result column="keepAlive3" property="keepAlive"/>
+                <collection property="children" ofType="com.demo.demo.sys.entity.BaseMenu">
+                    <id column="id4" property="id"/>
+                    <result column="name4" property="name" jdbcType="VARCHAR"/>
+                    <result column="requireAuth4" property="requireAuth" jdbcType="VARCHAR"/>
+                    <result column="path4" property="path" jdbcType="VARCHAR"/>
+                    <result column="iconCls4" property="iconCls" jdbcType="VARCHAR"/>
+                    <result column="keepAlive4" property="keepAlive"/>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="loadUserByUsername" resultMap="lazyLoadBaseRoles">
+        select bu.*,bc.company_code as companyCode from base_user bu
+        left join bus_company bc on bc.id = bu.companyId WHERE username=#{username};
+    </select>
+    <select id="loadUserByUsernameExit" resultMap="lazyLoadBaseRoles">
+        select * from base_user WHERE 1 = 1
+        <if test="username!=null and username!=''">
+            and username=#{username}
+        </if>
+        <if test="id!=null and id!=''">
+            and id!=#{id}
+        </if>
+    </select>
+    <select id="loadUserByUsernameAndPassWord" resultMap="lazyLoadBaseRoles">
+        select * from base_user WHERE username=#{username} AND password=#{oldpassword};
+    </select>
+    <select id="getBaseMenusByBaseUserId" resultMap="BaseMenuResultMap">
+        SELECT b.*,bm4.`id` AS id4,bm4.`name` AS name4,bm4.requireAuth AS requireAuth4,bm4.path AS path4,bm4.iconCls AS iconCls4,bm4.keepAlive AS keepAlive4 from
+          (SELECT a.*,bm3.`id` AS id3,bm3.`name` AS name3,bm3.requireAuth AS requireAuth3,bm3.path AS path3,bm3.iconCls AS iconCls3,bm3.keepAlive AS keepAlive3 from
+            (SELECT bm1.`id`, bm1.`name`, bm1.requireAuth, bm2.`id` AS id2, bm2.`name` AS name2, bm2.requireAuth AS requireAuth2, bm1.path, bm2.path AS path2, bm1.iconCls,
+              bm2.iconCls AS iconCls2, bm1.keepAlive, bm2.keepAlive AS keepAlive2 FROM base_menu bm1, base_menu bm2 WHERE bm1.`id` = bm2.`parentId` and bm1.parentId is null AND
+              bm1.id IN (select DISTINCT(mid) from base_menu_role where rid in (SELECT br.id FROM base_user_role bur,base_role br where bur.rid=br.id and bur.uid = #{id}))
+              AND bm2.id IN (select DISTINCT(mid) from base_menu_role where rid in (SELECT br.id FROM base_user_role bur,base_role br where bur.rid=br.id and bur.uid = #{id}))) a
+              left join base_menu bm3 on a.id2 = bm3.`parentId` AND bm3.`enabled` = TRUE AND
+              bm3.id IN (select DISTINCT(mid) from base_menu_role where rid in (SELECT br.id FROM base_user_role bur,base_role br where bur.rid=br.id and bur.uid = #{id}))
+              ) b left join base_menu bm4 on b.id3 = bm4.`parentId` AND bm4.`enabled` = TRUE AND
+          bm4.id IN (select DISTINCT(mid) from base_menu_role where rid in (SELECT br.id FROM base_user_role bur,base_role br where bur.rid=br.id and bur.uid = #{id}))
+           order by b.id,b.id2 ASC
+    </select>
+    <select id="getBaseRolesByBaseUserId" resultType="com.demo.demo.sys.entity.BaseRole">
+        SELECT br.* FROM base_user_role bur,base_role br where bur.rid=br.id and bur.uid = #{id}
+    </select>
+    <insert id="base_userReg">
+        INSERT INTO base_user set username=#{username},password=#{password}
+    </insert>
+    <select id="getBaseUsersByKeywords" resultMap="eagerLoadBaseRoles">
+        select bu.*,`br`.`id` AS `rid`,`br`.`name` AS `rname`,`br`.`nameZh` AS `rnameZh` from ((`base_user` `bu` left
+        join `base_user_role`
+        `bur` on ((`bu`.`id` = `bur`.`uid`))) left join `base_role` `br` on ((`bur`.`rid` = `br`.`id`))) where bu.`id`
+        not
+        in(select bur.`uid` from base_user_role bur,base_role br where bur.`rid`=br.`id` and br.`nameZh`='系统管理员')
+        <if test="keywords!='all' and keywords!=''">
+            and bu.`name` like concat('%',#{keywords},'%')
+        </if>
+        AND nu.id!=3
+        order by bu.`id` limit 10
+    </select>
+    <select id="getBaseUsersByKeywords" resultMap="BaseUserResultMap">
+        SELECT
+        bu.*, `br`.`id` AS `rid`,
+        `br`.`name` AS `rname`,
+        `br`.`nameZh` AS `rnameZh`,
+        c.company_name AS companyName,
+        c.company_code AS companyCode
+        FROM
+        (
+        (
+        `base_user` `bu`
+        LEFT JOIN `base_user_role` `bur` ON ((`bu`.`id` = `bur`.`uid`))
+        )
+        LEFT JOIN `base_role` `br` ON ((`bur`.`rid` = `br`.`id`))
+        )
+        LEFT JOIN bus_company c ON bu.companyId = c.id
+        WHERE
+        1 = 1
+        <if test="usercode != null and usercode !=''" >
+            and bu.usercode = #{usercode}
+        </if>
+        <if test="companyId != null and companyId !=''" >
+            and c.id = #{companyId}
+        </if>
+        <if test="name != null and name !=''" >
+            and bu.name = #{name}
+        </if>
+        <if test="statusValue == null or statusValue ==''">
+            <if test="enabled != null" >
+                and bu.enabled = #{enabled}
+            </if>
+        </if>
+        AND bu.id!=3
+        AND bu.isdel=FALSE
+        GROUP BY bu.id
+    </select>
+    <select id="getBaseUserById" resultMap="eagerLoadBaseRoles">
+        select bu.*,`br`.`id` AS `rid`,`br`.`name` AS `rname`,`br`.`nameZh` AS `rnameZh`,c.company_name AS companyName,c.company_code as companyCode from ((`base_user` `bu` left join `base_user_role`
+        `bur` on ((`bu`.`id` = `bur`.`uid`))) left join `base_role` `br` on ((`bur`.`rid` = `br`.`id`))) left join bus_company c on bu.companyId = c.id where bu.`id`=#{id}
+    </select>
+    <update id="updateBaseUser">
+        update base_user
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="telephone != null">
+                telephone = #{telephone},
+            </if>
+            <if test="address != null">
+                address = #{address},
+            </if>
+            <if test="usercode != null">
+                usercode = #{usercode},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+            <if test="modifyTime != null">
+                modify_time = #{modifyTime},
+            </if>
+            <if test="modifyBy != null">
+                modify_by = #{modifyBy},
+            </if>
+            <if test="companyId != null">
+                companyId = #{companyId},
+            </if>
+            <if test="password != null">
+                password = #{password},
+            </if>
+            <if test="enabled != null">
+                enabled = #{enabled},
+            </if>
+            <if test="isdel != null">
+                isdel = #{isdel}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    <insert id="addUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO base_user set name=#{name},phone=#{phone},create_by=#{createBy},create_time=#{createTime},remark=#{remark},
+        address=#{address},username=#{username},password=#{password},usercode=#{usercode},companyId=#{companyId},enabled=TRUE
+    </insert>
+    <delete id="deleteBaseRoleByBaseUserId" parameterType="Long">
+        DELETE FROM base_user_role where uid=#{uid}
+    </delete>
+    <insert id="addBaseRolesForBaseUser">
+        INSERT INTO base_user_role(uid,rid) VALUES
+        <foreach collection="rids" separator="," item="rid">
+            (#{baseUserId},#{rid})
+        </foreach>
+    </insert>
+    <delete id="deleteBaseUser" parameterType="Long">
+        DELETE FROM base_user WHERE id=#{id}
+    </delete>
+    
+    <select id="selectBaseUserByMap" resultMap="eagerLoadBaseRoles">
+        SELECT
+        bu.*, `br`.`id` AS `rid`,
+        `br`.`name` AS `rname`,
+        `br`.`nameZh` AS `rnameZh`,
+        c.company_name AS companyName,
+        c.company_code AS companyCode,
+        CASE bu.enabled
+        WHEN FALSE THEN
+        '已注销'
+        WHEN TRUE THEN
+        '正常'
+        END AS `statusValue`
+        FROM
+        (
+        (
+        `base_user` `bu`
+        LEFT JOIN `base_user_role` `bur` ON ((`bu`.`id` = `bur`.`uid`))
+        )
+        LEFT JOIN `base_role` `br` ON ((`bur`.`rid` = `br`.`id`))
+        )
+        LEFT JOIN bus_company c ON bu.companyId = c.id
+        WHERE
+        1 = 1
+        <if test="usercode != null and usercode !=''" >
+            and bu.usercode = #{usercode}
+        </if>
+        <if test="companyId != null and companyId !=''" >
+            and c.id = #{companyId}
+        </if>
+        <if test="name != null and name !=''" >
+            and bu.name = #{name}
+        </if>
+        <if test="statusValue != null and statusValue !=''">
+            <if test="statusValue == 1 or name =='1'" >
+                and bu.enabled = TRUE
+            </if>
+            <if test="statusValue == 2 or name =='2'" >
+                and bu.enabled = FALSE
+            </if>
+        </if>
+        AND bu.id!=3
+        GROUP BY bu.id
+    </select>
+    
+</mapper>

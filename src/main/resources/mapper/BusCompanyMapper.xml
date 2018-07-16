@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.BusCompanyMapper">
+    <select id="selectByMap" resultType="com.demo.demo.sys.dto.CompanyDto">
+        select c.*,s.site_name as siteName from bus_company c
+        left join bus_site s on s.site_id = c.site_id
+        <trim prefix="where" suffixOverrides="and">
+            <if test="enabled!=null">
+                c.enabled=#{enabled} and
+            </if>
+            <if test="siteId!=null">
+                c.site_id=#{siteId} and
+            </if>
+            <if test="id!=null">
+                c.id=#{id} and
+            </if>
+            <if test="search!=null">
+                (c.company_code like #{search} or c.company_py like #{search} or c.company_name like #{search} ) and
+            </if>
+        </trim>
+    </select>
+</mapper>

@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.ReceiptMapper">
+    <!-- 查询序列-->
+    <select id="selectSequence" parameterType="java.lang.String" resultType="java.lang.String">
+		select LPAD(nextval(#{seqName}), 8, 0) from dual;
+	</select>
+    <select id="selectId" parameterType="java.lang.Integer"  resultType="com.demo.demo.sys.dto.CompanyDto">
+        select s.id id ,s.company_name siteName FROM  bus_company s where s.id =(select companyid FROM  base_user WHERE  id=#{id})
+    </select>
+
+    <select id="getBaseUserName" resultType="com.demo.demo.sys.entity.BaseUser">
+        select username username from base_user s WHERE  s.id=#{id}
+    </select>
+
+    <!-- 分页查询收款信息 -->
+    <select id="selectReceiptPage" resultType="java.util.HashMap">
+        select t1.id,t1.Serial_no serialNo,t2.company_code receiveCompanyCode,t2.company_name receiveCompanyName,t3.name payCompanyType,
+        case when t1.pay_company_type=1 then t9.site_code when t1.pay_company_type=2 then t8.company_code else '' end
+        payCompanyCode,
+        case when t1.pay_company_type=1 then t9.site_name when t1.pay_company_type=2 then t8.company_name else
+        t1.pay_name end payName,
+        t1.total_money totalMoney,t4.name status,t5.name payType,t1.receive_time receiveTime,t1.create_time createTime,t1.print_time printTime,
+        t1.print_count printCount,t6.name createByName,t1.write_off_time writeOffTime,t7.name writeOffByName
+        from bus_receipt t1
+        left join bus_company t2 on t1.receive_company_id=t2.id
+        left join base_dict t3 on t1.pay_company_type=t3.value and t3.type_name='company_type'
+        left join base_dict t4 on t1.status=t4.value and t4.type_name='receipt_status'
+        left join base_dict t5 on t1.pay_type=t5.value and t5.type_name='pay_type'
+        left join base_user t6 on t1.create_by=t6.id
+        left join base_user t7 on t1.write_off_by=t7.id
+        left join bus_company t8 on t1.pay_company_id=t8.id
+        left join bus_site t9 on t1.pay_company_id=t9.site_id
+        <where>
+            <!-- 根据收款公司查询 -->
+            <if test=" receiveCompanyId != null and receiveCompanyId != '' ">
+               and t1.receive_company_id=#{receiveCompanyId}
+            </if>
+            <if test=" startTime != null ">
+                and t1.create_time>=#{startTime}
+            </if>
+            <if test=" endTime != null ">
+                and t1.create_time &lt;= #{endTime}
+            </if>
+            <if test=" payType != null and payType != '' ">
+                and t1.pay_type=#{payType}
+            </if>
+            <if test=" serialNo != null and serialNo != '' ">
+                and t1.serial_No=#{serialNo}
+            </if>
+            <if test=" createByName != null and createByName != '' ">
+                and t6.name=#{createByName}
+            </if>
+            <if test=" status != null and status != '' ">
+                and t1.status=#{status}
+            </if>
+            <if test=" payName != null and payName != '' ">
+                and (t1.pay_Name=#{payName} or t8.company_name=#{payName} or t9.site_name=#{payName})
+            </if>
+            <if test=" (ewbNo != null and ewbNo != '') or (chargeItemId != null and chargeItemId != '')">
+                and exists(
+                select 1 from bus_receipt_detail t11
+                where t11.receipt_id=t1.id
+                <if test=" ewbNo != null and ewbNo != '' ">
+                    and t11.ewb_no=#{ewbNo}
+                </if>
+                <if test=" chargeItemId != null and chargeItemId != '' ">
+                    and t11.charge_item_id=#{chargeItemId}
+                </if>
+                )
+            </if>
+            <if test=" writeOffByName != null and writeOffByName != '' ">
+                and t7.name=#{writeOffByName}
+            </if>
+            <if test=" companyid != null and companyid != '' ">
+                and t1.companyid=#{companyid}
+            </if>
+            and t1.status not in (2)
+        </where>
+        order by t1.create_time desc
+    </select>
+
+    <!-- 收款信息查询合计金额 -->
+    <select id="queryTotalAmount" resultType="java.lang.String">
+        select sum(t1.total_money) totalMoney
+        from bus_receipt t1
+        left join bus_company t2 on t1.receive_company_id=t2.id
+        left join base_dict t3 on t1.pay_company_type=t3.value and t3.type_name='company_type'
+        left join base_dict t4 on t1.status=t4.value and t4.type_name='receipt_status'
+        left join base_dict t5 on t1.pay_type=t5.value and t5.type_name='pay_type'
+        left join base_user t6 on t1.create_by=t6.id
+        left join base_user t7 on t1.write_off_by=t7.id
+        left join bus_company t8 on t1.pay_company_id=t8.id
+        left join bus_site t9 on t1.pay_company_id=t9.site_id
+        <where>
+            <!-- 根据收款公司查询 -->
+            <if test=" receiveCompanyId != null and receiveCompanyId != '' ">
+                and t1.receive_company_id=#{receiveCompanyId}
+            </if>
+            <if test=" startTime != null ">
+                and t1.create_time>=#{startTime}
+            </if>
+            <if test=" endTime != null ">
+                and t1.create_time &lt;= #{endTime}
+            </if>
+            <if test=" payType != null and payType != '' ">
+                and t1.pay_type=#{payType}
+            </if>
+            <if test=" serialNo != null and serialNo != '' ">
+                and t1.serial_No=#{serialNo}
+            </if>
+            <if test=" createByName != null and createByName != '' ">
+                and t6.name=#{createByName}
+            </if>
+            <if test=" status != null and status != '' ">
+                and t1.status=#{status}
+            </if>
+            <if test=" payName != null and payName != '' ">
+                and (t1.pay_Name=#{payName} or t8.company_name=#{payName} or t9.site_name=#{payName})
+            </if>
+            <if test=" (ewbNo != null and ewbNo != '') or (chargeItemId != null and chargeItemId != '')">
+                and exists(
+                select 1 from bus_receipt_detail t11
+                where t11.receipt_id=t1.id
+                <if test=" ewbNo != null and ewbNo != '' ">
+                    and t11.ewb_no=#{ewbNo}
+                </if>
+                <if test=" chargeItemId != null and chargeItemId != '' ">
+                    and t11.charge_item_id=#{chargeItemId}
+                </if>
+                )
+            </if>
+            <if test=" writeOffByName != null and writeOffByName != '' ">
+                and t7.name=#{writeOffByName}
+            </if>
+            <if test=" companyid != null and companyid != '' ">
+                and t1.companyid=#{companyid}
+            </if>
+            and t1.status not in (2)
+        </where>
+        order by t1.create_time desc
+    </select>
+
+    <!-- 分页查询暂时保存的收款信息-->
+    <select id="selectReceiptPage1" resultType="java.util.HashMap">
+        select t1.id  id,
+        t1.pay_type  payType,
+        t10.company_code  receiveCompanyCode,
+        t1.receive_company_id receiveCompanyId,
+        t10.company_name  receiveCompanyName,
+        t1.pay_company_type payCompanyType,
+        case when t1.pay_company_type=1 then t9.site_code when t1.pay_company_type=2 then t8.company_code else '' end
+        payCompanyCode,
+        case when t1.pay_company_type=1 then t9.site_name when t1.pay_company_type=2 then t8.company_name else
+        t1.pay_name end  payCompanyName,
+        t1.pay_name  payName,
+        t11.charge_item_code chargeItemCode,
+        t2.charge_item_id  chargeItemId,
+        t11.charge_item_name chargeItemName,
+        t2.money money,
+        t1.receive_time receiveTime,
+        t12.name username,
+        t2.ewb_no ewbNo,
+        t2.remark remark,
+        t1.pay_company_id payCompanyId
+        from bus_receipt t1
+        left join bus_receipt_detail t2  on  t1.id=t2.receipt_id
+        left join base_user t6 on t1.create_by=t6.id
+        left join bus_company t8 on t1.pay_company_id=t8.id
+        left join bus_site t9 on t1.pay_company_id=t9.site_id
+        left join bus_company t10 on t1.receive_company_id=t10.id
+        left join bus_charge_item t11 on t2.charge_item_id=t11.id
+        left join base_user t12 on t1.create_by=t12.id
+        <where>
+            <if test=" createBy != null and createBy != '' ">
+                t1.create_by=#{createBy}
+            </if>
+            and t1.status  in (2)
+        </where>
+        order by t1.create_time desc
+    </select>
+
+    <!-- 提交内容后按创建人来删除暂时保存的收款人信息-->
+    <delete id="deleteByReceipt"  parameterType="java.lang.Integer">
+        delete  from  bus_receipt where  create_by=#{createBy} AND  status=2
+    </delete>
+
+
+    <!-- 根据ID查询收款信息 -->
+    <select id="selectReceiptById" parameterType="java.lang.Integer" resultType="java.util.HashMap">
+		select t2.charge_item_name chargeItemName,t1.money,t1.ewb_no ewbNo,t1.remark ,t2.charge_item_code  chargeItemCode from bus_receipt_detail t1
+		inner join bus_charge_item t2 on t1.charge_item_id=t2.id
+		where t1.receipt_id=#{id}
+	</select>
+
+    <!-- 插入收款数据 -->
+    <insert id="insertReceipt" useGeneratedKeys="true" keyProperty="id"
+            parameterType="com.demo.demo.sys.entity.Receipt">
+		INSERT INTO bus_receipt(Serial_no,receive_company_id,pay_company_type,pay_company_id,pay_name,pay_type,total_money,status,receive_time,create_by,create_time,modify_time,modify_by,companyid)
+		VALUES (#{serialNo}, #{receiveCompanyId},#{payCompanyType},#{payCompanyId},#{payName},#{payType},#{totalMoney},#{status},#{receiveTime},#{createBy},now(),now(),#{modifyBy},#{companyid})
+	</insert>
+
+    <!-- 插入收款明细数据 -->
+    <insert id="insertReceiptDetail" parameterType="java.util.List">
+        insert into bus_receipt_detail(receipt_id,charge_item_id,money,ewb_no,remark) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.receiptId},#{item.chargeItemId},#{item.money},#{item.ewbNo},#{item.remark})
+        </foreach>
+    </insert>
+
+    <!-- 修改收款数据状态 -->
+    <update id="updateReceipt"  parameterType="com.demo.demo.sys.entity.Receipt">
+    	update bus_receipt set modify_by=#{modifyBy},modify_time=now(),status=#{status},write_off_by=#{writOffBy},write_off_time=now() 
+    	where id in (${ids})
+	</update>
+    <select id="selectReceiptDetailByIds" resultType="java.util.HashMap">
+        select r.Serial_no as sn ,d.money,d.ewb_no as ewbNo,d.remark ,r.total_money as tMoney,rCmp.company_name as rCmp,dt.name,
+        case when r.pay_company_type = 1 then site.site_name
+        when r.pay_company_type = 2 then pCmp.company_name
+        when r.pay_company_type = 3 then r.pay_name end  pCmp,
+        r.create_time as createTime,i.charge_item_name as chargeName,
+        r.receive_time as receiveTime,
+        u.name as userName
+        from bus_receipt_detail d
+        LEFT JOIN bus_receipt r on d.receipt_id = r.id
+        left join bus_charge_item i on d.charge_item_id = i.id
+        left join bus_company rCmp on rCmp.id = r.receive_company_id
+        left join bus_company pCmp on pCmp.id = r.pay_company_id
+        left join bus_site site on site.site_id = r.pay_company_id
+        left join base_dict dt on dt.value = r.pay_type and dt.type_name="pay_type"
+        left join base_user u on u.id = r.create_by
+        <trim prefix="where" suffixOverrides="and">
+            <if test="list!=null">
+                <foreach collection="list" item="item" index="index" separator="," open="r.id in (" close=") and" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="statustatuss!=null">
+                r.status = #{status}
+            </if>
+        </trim>
+        order by sn asc;
+    </select>
+    <update id="updatePrint">
+        update bus_receipt set print_count=print_count+1,print_time=#{printTime}
+        <trim prefix="where" suffixOverrides="and">
+            <if test="list!=null">
+                <foreach collection="list" item="item" index="index" separator="," open="id in (" close=") and" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="status!=null">
+                status = #{status}
+            </if>
+        </trim>
+    </update>
+
+    <!-- 根据当前登陆员工查询公司信息 -->
+    <select id="getCompanyInfo" resultType="java.util.HashMap">
+        SELECT DISTINCT
+        k.id AS companyId,
+        k.company_name AS companyName,
+        k.company_code AS companyCode,
+        k.company_py AS companyPy
+        FROM
+        base_user t
+        INNER JOIN bus_company k ON t.companyid = k.id
+        WHERE
+        t.id = #{userId}
+    </select>
+
+</mapper>

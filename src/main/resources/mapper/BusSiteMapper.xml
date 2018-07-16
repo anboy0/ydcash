@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.BusSiteMapper">
+    <resultMap id="SiteMap" type="com.demo.demo.sys.entity.bus.Site">
+        <id column="site_id" property="siteId" jdbcType="INTEGER"/>
+        <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+        <result column="site_name" property="siteName" jdbcType="VARCHAR"/>
+        <result column="site_type" property="siteType" javaType="INTEGER"/>
+        <result column="site_service_type" property="siteServiceType" javaType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="parent" property="parent" jdbcType="INTEGER"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="create_by" property="createBy" jdbcType="INTEGER"/>
+        <result column="modify_by" property="modifyBy" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="DATE"/>
+        <result column="modify_time" property="modifyTime" jdbcType="DATE"/>
+        <result column="created" property="created" jdbcType="VARCHAR"/>
+        <result column="modified" property="modified" jdbcType="VARCHAR"/>
+        <result column="siteName2" property="siteName2" jdbcType="VARCHAR"/>
+        <result column="siteTypeValue" property="siteTypeValue" jdbcType="VARCHAR"/>
+        <result column="siteServiceTypeValue" property="siteServiceTypeValue" jdbcType="VARCHAR"/>
+        <result column="siteStatusValue" property="siteStatusValue" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--按SiteId查询-->
+    <select id="getSiteId" parameterType="java.lang.Integer" resultMap="SiteMap">
+        SELECT * FROM bus_site where site_id= #{siteId}
+    </select>
+
+    <!--按网点编号查询-->
+    <select id="getSiteCode" parameterType="java.lang.String" resultMap="SiteMap">
+        SELECT * FROM bus_site where site_code= #{siteCode}
+    </select>
+
+    <!--按网点名称查询-->
+    <select id="getSiteName" parameterType="java.lang.String" resultMap="SiteMap">
+        SELECT * FROM bus_site where site_name= #{siteName}
+    </select>
+
+    <!--新增网点管理-->
+    <insert id="addBusSite">
+        INSERT INTO bus_site set site_code=#{siteCode},
+        site_name=#{siteName},site_type=#{siteType},site_service_type=#{siteServiceType},
+        status=#{status},parent=#{parent},remark=#{remark},
+        create_by=#{createBy},create_time=#{createTime},modify_by=#{modifyBy},
+        modify_time=#{modifyTime}
+    </insert>
+
+    <select id="getSitesByNameOrCode" parameterType="String" resultMap="SiteMap">
+        SELECT
+        s.site_id,
+        s.site_code,
+        s.site_name,
+        s.site_type,
+        s.site_service_type,
+        u1.`name` AS created,
+        u2.`name` AS modified,
+        s.create_time AS create_time,
+        s.modify_time AS modify_time,
+        s.parent
+        FROM
+        bus_site s
+        LEFT JOIN base_user u1 ON s.create_by = u1.id
+        LEFT JOIN base_user u2 ON s.modify_by = u2.id
+        WHERE
+        s.`status` = 'running'
+        <if test="_parameter != null and _parameter !=''" >
+            and (s.site_name like CONCAT(CONCAT('%', #{_parameter}), '%') or s.site_code like CONCAT(CONCAT('%', #{_parameter}), '%'))
+        </if>
+        LIMIT 20
+    </select>
+    <select id="getSitesByCondition" parameterType="com.demo.demo.sys.entity.bus.Site" resultMap="SiteMap">
+        SELECT
+        s1.site_code,
+        s1.site_name,
+        s1.site_type,
+        s1.site_service_type,
+        s1.status,
+        u1.`name` AS created,
+        u2.`name` AS modified,
+        s1.create_time AS create_time,
+        s1.modify_time AS modify_time,
+        s2.site_name AS siteName2
+        FROM
+        bus_site s1
+        LEFT JOIN base_user u1 ON s1.create_by = u1.id
+        LEFT JOIN base_user u2 ON s1.modify_by = u2.id
+        LEFT JOIN bus_site s2 ON s1.parent = s2.site_code
+        WHERE
+        1 = 1
+        <if test="siteCode != null and siteCode !=''" >
+            and s1.site_code = #{siteCode}
+        </if>
+        <if test="siteName != null and siteName !=''" >
+            and s1.site_name = #{siteName}
+        </if>
+        <if test="siteType != null and siteType !=''" >
+            and s1.site_type = #{siteType}
+        </if>
+        <if test="status != null and status !=''" >
+            and s1.`status` = #{status}
+        </if>
+        <if test="parent != null and parent !=''" >
+            and s1.parent = #{parent}
+        </if>
+        <if test="siteServiceType != null and siteServiceType !=''" >
+            and s1.site_service_type = #{siteServiceType}
+        </if>
+    </select>
+    <select id="selectSiteByMap" resultMap="SiteMap">
+        SELECT
+        CASE s1.site_type
+        WHEN 155 THEN
+        '总部'
+        WHEN 953 THEN
+        '省区'
+        WHEN 143 THEN
+        '一级分拨中心'
+        WHEN 137 THEN
+        '一级财务中心'
+        WHEN 144 THEN
+        '二级分拨中心'
+        WHEN 138 THEN
+        '二级财务中心'
+        WHEN 146 THEN
+        '一级直营网点'
+        WHEN 139 THEN
+        '一级加盟网点'
+        WHEN 140 THEN
+        '二级加盟网点'
+        END AS `siteTypeValue`,
+        CASE s1.site_service_type
+        WHEN 1 THEN
+        '寄派服务'
+        WHEN 2 THEN
+        '寄件服务'
+        WHEN 3 THEN
+        '派件服务'
+        END AS `siteServiceTypeValue`,
+        CASE s1.status
+        WHEN 'running' THEN
+        '正常'
+        WHEN 'stop' THEN
+        '暂停'
+        END AS `siteStatusValue`,
+        s1.site_id,
+        s1.site_code AS site_code,
+        s1.site_name AS site_name,
+        s1.site_type AS siteType,
+        s1.site_service_type AS siteServiceType,
+        s1.status,
+        u1.`name` AS created,
+        u2.`name` AS modified,
+        s1.create_time AS createTime,
+        s1.modify_time AS modifyTime,
+        s2.site_name AS siteName2
+        FROM
+        bus_site s1
+        LEFT JOIN base_user u1 ON s1.create_by = u1.id
+        LEFT JOIN base_user u2 ON s1.modify_by = u2.id
+        LEFT JOIN bus_site s2 ON s1.parent = s2.site_code
+        WHERE
+        1 = 1
+        <if test="siteCode != null and siteCode !=''" >
+            and s1.site_code = #{siteCode}
+        </if>
+        <if test="siteName != null and siteName !=''" >
+            and s1.site_name = #{siteName}
+        </if>
+        <if test="siteType != null and siteType !=''" >
+            and s1.site_type = #{siteType}
+        </if>
+        <if test="status != null and status !=''" >
+            and s1.`status` = #{status}
+        </if>
+        <if test="parent != null and parent !=''" >
+            and s1.parent = #{parent}
+        </if>
+        <if test="siteServiceType != null and siteServiceType !=''" >
+            and s1.site_service_type = #{siteServiceType}
+        </if>
+    </select>
+</mapper>

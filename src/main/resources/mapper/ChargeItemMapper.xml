@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.ChargeItemMapper">
+    <!-- 分页查询费用项目 -->
+    <select id="selectChargeItemPage" resultType="java.util.HashMap">
+        select t1.id,t1.parent_Id parentId,t1.charge_item_code chargeItemCode,t1.charge_item_name chargeItemName,case when t1.parent_Id=0 then '根节点' else t4.charge_item_name end
+        parentName,t1.remark,t2.name createByName,
+        t1.create_time createTime,t3.name modifyByName,t1.modify_time modifyTime
+        from bus_charge_item t1
+        left join base_user t2 on t1.create_by=t2.id
+        left join base_user t3 on t1.modify_by=t3.id
+        left join bus_charge_item t4 on t1.parent_Id=t4.id
+        where t1.enabled=1
+		<if test=" id!=null">
+		   and t1.id=#{id}
+		</if>
+		<if test=" parentId!=null">
+		    and FIND_IN_SET(t1.id, getChargeItemChildList(#{parentId})) > 0
+		</if>
+    </select>
+
+	<!-- 根据条件模糊查询费用项目 -->
+    <select id="selectChargeItemByMap" resultType="com.demo.demo.sys.entity.ChargeItemExport">
+        select t1.id,t1.parent_Id parentId,t1.charge_item_code chargeItemCode,t1.charge_item_name chargeItemName,case when t1.parent_Id=0 then '根节点' else t4.charge_item_name end
+        parentName,t1.remark,t2.name createByName,
+        t1.create_time createTime,t3.name modifyByName,t1.modify_time modifyTime
+        from bus_charge_item t1
+        left join base_user t2 on t1.create_by=t2.id
+        left join base_user t3 on t1.modify_by=t3.id
+        left join bus_charge_item t4 on t1.parent_Id=t4.id
+        where t1.enabled=1
+		<if test=" id!=null">
+		   and t1.id=#{id}
+		</if>
+		<if test=" parentId!=null">
+		    and FIND_IN_SET(t1.id, getChargeItemChildList(#{parentId})) > 0
+		</if>
+    </select>
+    
+    <!-- 根据费用ID查询费用项目 -->
+    <select id="selectChargeItemById" resultType="java.util.HashMap">
+        select t1.id,t1.parent_Id parentId,t1.charge_item_code chargeItemCode,t1.charge_item_name chargeItemName,case when t1.parent_Id=0 then '根节点' else t4.charge_item_name end
+        parentName,t1.remark,t2.name createByName,
+        t1.create_time createTime,t3.name modifyByName,t1.modify_time modifyTime
+        from bus_charge_item t1
+        left join base_user t2 on t1.create_by=t2.id
+        left join base_user t3 on t1.modify_by=t3.id
+        left join bus_charge_item t4 on t1.parent_Id=t4.id
+        <where>
+            <if test=" id!=null ">
+                t1.id=#{id}
+            </if>
+        </where>
+    </select>
+
+    <!-- 模糊查询费用项目名称、费用项目编码 -->
+    <select id="selectChargeItem" resultType="java.util.HashMap">
+		select id,charge_item_name chargeItemName,charge_item_code chargeItemCode from bus_charge_item
+		where (charge_item_name like concat('%',#{name},'%')  or charge_item_code like concat('%',#{name},'%')) and enabled=1
+		<if test=" excludeId !=null">
+        	and id != #{excludeId}
+    	</if>
+		limit #{start},#{end}
+	</select>
+	
+	<!-- 模糊查询费用项目名称、费用项目编码 -->
+    <select id="selectRepeatCount" resultType="java.lang.Integer">
+		select count(id) from bus_charge_item where charge_item_code=#{chargeItemCode} and enabled=1
+		<if test=" id !=null">
+        	and id != #{id}
+    	</if>
+	</select>
+
+    <!-- 初始化树 -->
+    <resultMap type="com.demo.demo.sys.entity.ChargeItem" id="chargeItemTree">
+        <result column="id" property="id" javaType="java.lang.Integer"/>
+        <result column="charge_item_name" property="chargeItemName" javaType="java.lang.String"/>
+        <collection column="id" property="childrenList" ofType="ChargeItem" javaType="java.util.ArrayList"
+                    select="selectChildrenById"/>
+    </resultMap>
+
+    <!-- 根据parent_id，先查出所有一级数据 -->
+    <select id="selectTreeList" resultMap="chargeItemTree">
+		select id,charge_item_name from bus_charge_item  where parent_id=-1
+	</select>
+
+    <!-- 再递归查询出一级下的所有子数据 -->
+    <select id="selectChildrenById" resultMap="chargeItemTree" parameterType="string">
+		select id,charge_item_name from bus_charge_item  where enabled=1 and parent_id= #{id}
+	</select>
+
+    <!-- 再递归查询出一级下的所有子数据 -->
+    <select id="selectChildrenName"  resultMap="chargeItemTree" parameterType="java.lang.Integer">
+        select id,charge_item_name from bus_charge_item  where enabled=1 and parent_id= #{id}
+    </select>
+</mapper>

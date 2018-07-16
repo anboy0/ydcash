@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="1800">
+    <!--定义日志储存文件目录 -->
+    <properties>
+        <property name="LOG_HOME">D:/logs</property>
+        <property name="FILE_NAME">demo</property>
+    </properties>
+
+    <Appenders>
+        <!--控制台输出所有日志 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+
+        <!--Info debug 级别日志输出 -->
+        <RollingRandomAccessFile name="InfoFile" fileName="${LOG_HOME}/${FILE_NAME}-info.log"
+                                 filePattern="${LOG_HOME}/${FILE_NAME}-info-%d{yyyy-MM-dd}-%i.log">
+            <Filters>
+                <ThresholdFilter level="warn" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="debug" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <PatternLayout pattern="%date{yyyy-MM-dd HH:mm:ss.SSS} %level [%thread][%file:%line] - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingRandomAccessFile>
+
+        <!--WARN Error级别日志输出 -->
+        <RollingRandomAccessFile name="ErrorFile" fileName="${LOG_HOME}/${FILE_NAME}-error.log"
+                                 filePattern="${LOG_HOME}/${FILE_NAME}-error-%d{yyyy-MM-dd}-%i.log">
+            <Filters>
+                <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <PatternLayout pattern="%date{yyyy-MM-dd HH:mm:ss.SSS} %level [%thread][%file:%line] - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingRandomAccessFile>
+
+        <!-- 配置mongdb appender
+        <NoSql name="mongoAppender">
+            <MongoDb databaseName="${sys:spring.data.mongodb.database}" collectionName="${sys:spring.data.mongodb.collectionName}" server="${sys:spring.data.mongodb.host}" port="${sys:spring.data.mongodb.port}" />
+        </NoSql>
+         -->
+    </Appenders>
+
+    <Loggers>
+        <!-- 写操作日志-->
+        <!--
+        <Logger name="operateLog" level="INFO" additivity="false">
+            <appender-ref ref="Console" />
+        </Logger>
+         -->
+
+        <!-- 打印mybatis的SQL语句 -->
+        <logger name="com.demo.demo.sys.mapper" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+
+        <!-- 写普通日志 -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="InfoFile"/>
+            <AppenderRef ref="ErrorFile"/>
+        </Root>
+    </Loggers>
+</Configuration>

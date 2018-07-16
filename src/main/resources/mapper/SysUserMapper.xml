@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.SysUserMapper">
+
+
+    <select id="selectPageByMap" resultType="com.demo.demo.sys.entity.SysUser">
+        select * from sys_user
+        <trim prefix="where " suffixOverrides="and">
+            <if test="userName !=null">
+                username = #{userName} and
+            </if>
+        </trim>
+    </select>
+</mapper>

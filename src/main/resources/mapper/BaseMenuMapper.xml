@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.BaseMenuMapper">
+    <resultMap id="BaseResultMap" type="com.demo.demo.sys.entity.BaseMenu">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="component" property="component" javaType="java.lang.Object"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="iconCls" property="iconCls" jdbcType="VARCHAR"/>
+        <result column="keepAlive" property="keepAlive" jdbcType="BIT"/>
+        <result column="parentId" property="parentId" jdbcType="INTEGER"/>
+        <result column="requireAuth" property="requireAuth"/>
+        <result column="keepAlive" property="keepAlive"/>
+        <association property="meta" javaType="com.demo.demo.sys.entity.BaseMenuMeta">
+            <result column="keepAlive" property="keepAlive"/>
+            <result column="requireAuth" property="requireAuth"/>
+        </association>
+        <collection property="baseRoles" ofType="com.demo.demo.sys.entity.BaseRole">
+            <id column="rid" property="id"/>
+            <result column="rname" property="name"/>
+            <result column="rnamezh" property="nameZh"/>
+        </collection>
+        <collection property="children" ofType="com.demo.demo.sys.entity.BaseMenu">
+            <id column="id2" property="id"/>
+            <result column="path2" property="path" jdbcType="VARCHAR"/>
+            <result column="component2" property="component" jdbcType="VARCHAR"/>
+            <result column="name2" property="name" jdbcType="VARCHAR"/>
+            <result column="requireAuth2" property="requireAuth" jdbcType="VARCHAR"/>
+            <result column="path2" property="path" jdbcType="VARCHAR"/>
+            <result column="iconCls2" property="iconCls" jdbcType="VARCHAR"/>
+            <result column="keepAlive2" property="keepAlive"/>
+            <association property="meta" javaType="com.demo.demo.sys.entity.BaseMenuMeta">
+                <result column="keepAlive2" property="keepAlive"/>
+                <result column="requireAuth2" property="requireAuth"/>
+            </association>
+            <collection property="children" ofType="com.demo.demo.sys.entity.BaseMenu">
+                <id column="id3" property="id"/>
+                <result column="name3" property="name" jdbcType="VARCHAR"/>
+                <result column="requireAuth3" property="requireAuth" jdbcType="VARCHAR"/>
+                <result column="path3" property="path" jdbcType="VARCHAR"/>
+                <result column="iconCls3" property="iconCls" jdbcType="VARCHAR"/>
+                <result column="keepAlive3" property="keepAlive"/>
+                <collection property="children" ofType="com.demo.demo.sys.entity.BaseMenu">
+                    <id column="id4" property="id"/>
+                    <result column="name4" property="name" jdbcType="VARCHAR"/>
+                    <result column="requireAuth4" property="requireAuth" jdbcType="VARCHAR"/>
+                    <result column="path4" property="path" jdbcType="VARCHAR"/>
+                    <result column="iconCls4" property="iconCls" jdbcType="VARCHAR"/>
+                    <result column="keepAlive4" property="keepAlive"/>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="getAllBaseMenu" resultMap="BaseResultMap">
+        select bm.*,br.`id` as rid,br.`name` as rname,br.`nameZh` as rnamezh from base_menu bm left join base_menu_role bmr on bm.`id`=bmr.`mid`
+        left join base_role br on bmr.`rid`=br.`id` WHERE bm.`enabled`=true order by bm.`id` desc
+    </select>
+    <select id="getBaseMenusByBaseUserId" parameterType="Integer" resultMap="BaseResultMap">
+        select bm1.`id`,bm1.`path`,bm1.`component`,bm1.`iconCls`,bm1.`name`,bm1.`requireAuth`,bm2.`component` as component2,bm2.`iconCls` as iconCls2,
+        bm2.`keepAlive` as keepAlive2,bm2.`name` as name2,bm2.`path` as path2,bm2.`requireAuth` as requireAuth2 from base_menu bm1,base_menu bm2
+        where bm1.`id`=bm2.`parentId` and bm1.`id`!=1 and bm2.`id` in(select bmr.`mid` from base_user_role bur,base_menu_role bmr
+        where bur.`rid`=bmr.`rid` and bur.`uid`=#{uid}) and bm2.`enabled`=true order by bm1.`id`,bm2.`id`
+    </select>
+    <select id="baseMenuTree" resultMap="BaseResultMap">
+        SELECT b.*,bm4.`id` AS id4,bm4.`name` AS name4,bm4.requireAuth AS requireAuth4,bm4.path AS path4,bm4.iconCls AS iconCls4,bm4.keepAlive AS keepAlive4 from
+        (SELECT a.*,bm3.`id` AS id3,bm3.`name` AS name3,bm3.requireAuth AS requireAuth3,bm3.path AS path3,bm3.iconCls AS iconCls3,bm3.keepAlive AS keepAlive3 from
+        (SELECT
+          bm1.`id`,
+          bm1.`name`,
+          bm1.requireAuth,
+          bm2.`id` AS id2,
+          bm2.`name` AS name2,
+          bm2.requireAuth AS requireAuth2,
+          bm1.path,
+          bm2.path AS path2,
+          bm1.iconCls,
+          bm2.iconCls AS iconCls2,
+          bm1.keepAlive,
+          bm2.keepAlive AS keepAlive2
+        FROM
+          base_menu bm1,
+          base_menu bm2
+        WHERE
+          bm1.`id` = bm2.`parentId` and bm1.parentId is null) a left join base_menu bm3
+        on a.id2 = bm3.`parentId` AND bm3.`enabled` = TRUE) b left join base_menu bm4
+        on b.id3 = bm4.`parentId` AND bm4.`enabled` = TRUE  order by b.id ASC
+    </select>
+    <select id="getBaseMenusByRid" resultType="Long">
+        SELECT mid from base_menu_role WHERE rid=#{rid}
+    </select>
+    <insert id="addMenu">
+        INSERT INTO base_menu set url=#{url},path=#{path},component=#{component},name=#{name},iconCls=#{iconCls},parentId=#{parentId}
+    </insert>
+</mapper>

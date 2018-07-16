@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.CommonExportMapper">
+    <resultMap id="receiptExport" type="com.demo.demo.sys.entity.bus.ReceiptExport">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="Serial_no" property="sn"/>
+        <result column="create_time" property="createTime"/>
+        <result column="print_count" property="printCount"/>
+        <result column="print_time" property="printTime"/>
+        <result column="write_off_time" property="writeOffTime"/>
+        <result column="receive_time" property="receiveTime"/>
+        <result column="name" property="createBy"/>
+        <result column="total_money" property="money"/>
+        <result column="writeOff" property="writeOffBy"/>
+        <result column="payName" property="payType"/>
+        <result column="cmpType" property="cmpType"/>
+        <result column="status" property="status"/>
+        <result column="write_off" property="writeOffMoney"/>
+        <result column="cmp_code" property="cmpCode"/>
+        <result column="cmp_name" property="cmpName"/>
+        <result column="rCmpCode" property="rCmpCode"/>
+        <result column="rCmpName" property="rCmpName"/>
+    </resultMap>
+    <select id="selectReciptByMap" resultMap="receiptExport">
+        SELECT
+        bs.Serial_no,
+        bs.create_time,
+        bs.print_count,
+        bs.print_time,
+        bs.receive_time,
+        bs.write_off_time,
+        usr.`name`,
+        bs.total_money,
+        rcmp.company_code as rCmpCode,
+        rcmp.company_name as rCmpName,
+        wf.`name` AS writeOff,
+        (
+        SELECT
+        NAME
+        FROM
+        base_dict
+        WHERE
+        type_name = 'receipt_status'
+        AND STATUS = 1 and value=bs.status
+        ) AS STATUS,
+        (
+        SELECT
+        NAME
+        FROM
+        base_dict
+        WHERE
+        type_name = 'pay_type'
+        AND STATUS = 1 and value=bs.pay_type
+        ) AS payName,
+        (
+        SELECT
+        NAME
+        FROM
+        base_dict
+        WHERE
+        type_name = 'company_type'
+        AND STATUS = 1 and value=bs.pay_company_type
+        ) AS cmpType,
+        CASE bs. STATUS
+        WHEN 1 THEN
+        ''
+        WHEN 0 THEN
+        - 1 * bs.total_money
+        END AS `write_off`,
+        CASE bs.pay_company_type
+        WHEN 1 THEN
+        site.site_code
+        WHEN 2 THEN
+        cmp.company_code
+        WHEN 3 THEN
+        ''
+        END AS cmp_code,
+        CASE bs.pay_company_type
+        WHEN 2 THEN
+        cmp.company_name
+        WHEN 3 THEN
+        cmp.company_name
+        WHEN 1 THEN
+        site.site_name
+        END AS cmp_name
+        FROM
+        bus_receipt bs
+        LEFT JOIN bus_company cmp ON cmp.id = bs.pay_company_id
+        LEFT JOIN bus_company rcmp ON rcmp.id = bs.receive_company_id
+        LEFT JOIN base_user usr ON bs.create_by = usr.id
+        LEFT JOIN base_user wf ON bs.write_off_by = wf.id
+        LEFT JOIN bus_site site ON bs.pay_company_id = site.site_id
+        <trim prefix="where" suffixOverrides="and">
+            <if test="timeType == null or timeType == 1">
+                <!-- <if test="startTime!=null">
+                     bs.create_time >= str_to_date(#{startTime},'%Y-%m-%d') and
+                 </if>
+                 <if test="endTime!=null">
+                     bs.create_time <![CDATA[<=]]>str_to_date(#{endTime},'%Y-%m-%d')  and
+                 </if>-->
+                <if test="startTime!=null">
+                    bs.create_time >= #{startTime} and
+                </if>
+                <if test="endTime!=null">
+                    bs.create_time <![CDATA[<=]]> #{endTime} and
+                </if>
+            </if>
+            <if test="timeType != null or timeType == 2">
+                <if test="startTime!=null">
+                    bs.receive_time >= #{startTime} and
+                </if>
+                <if test="endTime!=null">
+                    bs.receive_time <![CDATA[<=]]> #{endTime} and
+                </if>
+                <!--<if test="startTime!=null">
+                    bs.receive_time >= str_to_date(#{startTime},'%Y-%m-%d') and
+                </if>
+                <if test="endTime!=null">
+                    bs.receive_time <![CDATA[<=]]>str_to_date(#{endTime},'%Y-%m-%d')  and
+                </if>-->
+            </if>
+
+            <if test="timeType != null or timeType == 3">
+                <if test="startTime!=null">
+                    write_off_time >= #{startTime} and
+                </if>
+                <if test="endTime!=null">
+                    write_off_time <![CDATA[<=]]> #{endTime} and
+                </if>
+                <!--<if test="startTime!=null">
+                    write_off_time >= str_to_date(#{startTime},'%Y-%m-%d') and
+                </if>
+                <if test="endTime!=null">
+                    write_off_time <![CDATA[<=]]>str_to_date(#{endTime},'%Y-%m-%d')  and
+                </if>-->
+            </if>
+            <!-- 根据收款公司查询 -->
+            <if test="receiveCompanyId != null and receiveCompanyId != '' ">
+                bs.receive_company_id=#{receiveCompanyId} AND
+            </if>
+            <if test="payType!=null">
+                bs.pay_type = #{payType} and
+            </if>
+            <if test="companyType!=null">
+                bs.pay_company_type = #{companyType} and
+            </if>
+            <if test="status!=null">
+                bs.status = #{status} and
+            </if>
+            <if test="createBy!=null">
+                bs.create_by = #{createBy} and
+            </if>
+            <if test="writeOffBy!=null">
+                bs.write_off_by = #{writeOffBy} and
+            </if>
+            <if test=" payName != null">
+                (bs.pay_Name=#{payName} or cmp.company_name=#{payName} or site.site_name=#{payName}) and
+            </if>
+            <if test=" ewbNo != null or chargeItemName != null">
+                exists(
+                select 1 from bus_receipt_detail t11
+                INNER JOIN bus_charge_item t12 on t11.charge_item_id=t12.id
+                where t11.receipt_id=bs.id
+                <if test=" ewbNo != null">
+                    and t11.ewb_no=#{ewbNo}
+                </if>
+                <if test=" chargeItemName != null">
+                    and t12.charge_item_name=#{chargeItemName}
+                </if>
+                ) and
+            </if>
+        </trim>
+    </select>
+</mapper>

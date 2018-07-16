@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.BaseDepartmentMapper">
+    <select id="addDep" statementType="CALLABLE">
+        call addDep(#{dep.name,mode=IN,jdbcType=VARCHAR},#{dep.parentId,mode=IN,jdbcType=INTEGER},#{dep.enabled,mode=IN,jdbcType=BOOLEAN},#{dep.result,mode=OUT,jdbcType=INTEGER},#{dep.id,mode=OUT,jdbcType=BIGINT})
+    </select>
+    <select id="deleteDep" statementType="CALLABLE">
+        call deleteDep(#{dep.id,mode=IN,jdbcType=INTEGER},#{dep.result,mode=OUT,jdbcType=INTEGER})
+    </select>
+    <resultMap id="BaseResultMap" type="com.demo.demo.sys.entity.BaseDepartment">
+        <id property="id" column="id"/>
+        <result column="name" property="name"/>
+        <result column="parentId" property="parentId"/>
+        <result column="isParent" property="isParent"/>
+        <collection property="children" ofType="com.demo.demo.sys.entity.BaseDepartment" select="getDepByPid"
+                    column="id">
+        </collection>
+    </resultMap>
+    <select id="getDepByPid" resultMap="BaseResultMap">
+        select bd.* from base_department bd where bd.`parentId`=#{pid} AND bd.enabled=true;
+    </select>
+    <select id="getAllDeps" resultType="com.demo.demo.sys.entity.BaseDepartment">
+        select bd.* from base_department bd WHERE bd.enabled=true;
+    </select>
+</mapper>

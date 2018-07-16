@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.demo.sys.mapper.BaseRoleMapper">
+    <select id="baseRoles" resultType="com.demo.demo.sys.entity.BaseRole">
+        SELECT
+            r.*,
+            u1.`name` AS createName,
+            u2.`name` AS modifyName
+            FROM
+            base_role r
+            LEFT JOIN base_menu_role mr ON r.id = mr.rid
+            LEFT JOIN base_menu m ON mr.mid = m.id
+            LEFT JOIN base_user u1 ON r.create_by = u1.id
+            LEFT JOIN base_user u2 ON r.modify_by = u2.id
+        WHERE
+          r.id != 6
+        <if test="id != null and id !=''" >
+            and r.id = #{id}
+        </if>
+        <if test="nameZh != null and nameZh !=''" >
+            and r.nameZh = #{nameZh}
+        </if>
+        <if test="name != null and name !=''" >
+            and r.name = #{name}
+        </if>
+        <if test="menuName != null and menuName !=''" >
+            and m.name = #{menuName}
+        </if>
+        GROUP BY r.nameZh
+    </select>
+    <select id="baseRolesExit" resultType="com.demo.demo.sys.entity.BaseRole">
+        SELECT
+        r.*,
+        u1.`name` AS createName,
+        u2.`name` AS modifyName
+        FROM
+        base_role r
+        LEFT JOIN base_menu_role mr ON r.id = mr.rid
+        LEFT JOIN base_menu m ON mr.mid = m.id
+        LEFT JOIN base_user u1 ON r.create_by = u1.id
+        LEFT JOIN base_user u2 ON r.modify_by = u2.id
+        WHERE
+        r.id != 6
+        <if test="nameZh != null and nameZh !=''" >
+            and r.nameZh = #{nameZh}
+        </if>
+        <if test="name != null and name !=''" >
+            and r.name = #{name}
+        </if>
+        <if test="menuName != null and menuName !=''" >
+            and m.name = #{menuName}
+        </if>
+        <if test="id != null and id !=''" >
+            and r.id != #{id}
+        </if>
+        GROUP BY r.nameZh
+    </select>
+    <select id="queryBaseRoleListByUid" resultType="com.demo.demo.sys.entity.BaseRole">
+        SELECT
+        r.id,
+        r. nameZh
+        FROM
+        base_role r
+        LEFT JOIN base_user_role ur ON r.id = ur.rid
+        WHERE
+        ur.uid = #{uid}
+    </select>
+    <insert id="addNewBaseRole">
+        INSERT INTO base_role set name=#{name},nameZh=#{nameZh},create_by=#{createBy},create_time=#{createTime},remark=#{remark}
+    </insert>
+    <update id="updateBaseRole">
+        update base_role
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="nameZh != null">
+                nameZh = #{nameZh},
+            </if>
+            <if test="modifyBy != null">
+                modify_by = #{modifyBy},
+            </if>
+            <if test="modifyTime != null">
+                modify_time = #{modifyTime},
+            </if>
+            <if test="remark != null">
+                remark = #{remark}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    <delete id="deleteBaseRoleByRoleId" parameterType="Long">
+        DELETE FROM base_user_role where rid=#{rid}
+    </delete>
+    <delete id="deleteBaseRoleMenuByRoleId" parameterType="Long">
+        DELETE FROM base_menu_role where rid=#{rid}
+    </delete>
+    <delete id="deleteBaseRoleById" parameterType="Long">
+        DELETE FROM base_role WHERE id=#{rid}
+    </delete>
+</mapper>
